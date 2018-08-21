@@ -9,9 +9,11 @@ Data representation
 
 Bingo supports Daylight SMILES with some ChemAxon extensions and MDL
 (Symyx) Molfile/Rxnfile formats both in the text and binary
-representation. Please look at the corresponding section of `Bingo User
-Manual for Oracle <user-manual-oracle.html#data-representation>`__ for
-details.
+representation. 
+
+
+.. include:: ref/data_representation.rst
+
 
 Storage
 ~~~~~~~
@@ -66,6 +68,10 @@ The following command creates the index for bytea (binary) column:
    binary column ``$bcolumn``.
 -  ``$index`` is the name of the new index.
 
+.. include:: ref/creation_an_index.rst
+
+
+
 Updating and Dropping Index
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -80,24 +86,22 @@ clean up the index.
 Substructure Search
 ~~~~~~~~~~~~~~~~~~~
 
-The general form of substructure search query is as follows:
+..
+    The general form of substructure search query is as follows:
+    
+    ::
 
-::
+        select * from $table where $column @ ('$query', '$parameters')::bingo.sub
+    
+    -  ``$table`` is the name of the table containing molecules in the
+       column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query molfile or
+       SMILES.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.sub
+.. include:: ref/substructure_search.rst
 
--  ``$table`` is the name of the table containing molecules in the
-   column ``$column``.
--  ``$query`` is a ``text`` string containing the query molfile or
-   SMILES.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#substructure-search>`__ to learn the
-rules of Bingo substructure matching (including Resonance search,
-Conformation search, Affine transformation search), and various query
-features available.
 
 SMARTS Search
 ~~~~~~~~~~~~~
@@ -116,100 +120,95 @@ substructure search:
 -  ``$parameters`` is a ``varchar`` string that can be empty or contain
    some options to pass to Bingo search engine.
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#smarts-search>`__ to learn the rules of
-SMARTS matching in Bingo.
+.. include:: ref/smarts_search.rst
+
 
 Exact Search
 ~~~~~~~~~~~~
 
-The general form of exact search query is as follows:
+..
+    The synatx of exact search is as follows:
+    
+    ::
+    
+        select * from $table where $column @ ('$query', '$parameters')::bingo.exact
 
-::
+    -  ``$table`` is the name of the table containing molecules in the
+       column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query molfile or
+       SMILES.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.exact
 
--  ``$table`` is the name of the table containing molecules in the
-   column ``$column``.
--  ``$query`` is a ``text`` string containing the query molfile or
-   SMILES.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
+.. include:: ref/exact_search.rst
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#exact-search>`__ to learn the rules of
-Bingo exact matching and various flags available for ``$parameters``
-string.
 
 Tautomer Search
 ~~~~~~~~~~~~~~~
 
 Tautomer search is implemented within Substructure and Exact search
 functions, and requires ``TAU`` flag to be specified in ``$parameters``
-string. Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the rules
-of Bingo exact and substructure tautomer matching.
+string.
 
-Customizing the Rules
-^^^^^^^^^^^^^^^^^^^^^
 
-Your database (to which you have installed Bingo) contains a table
-called ``bingo.bingo_tau_config``. By default it contains 3 records with
-predefined rules. You can add, remove, or update the defined rules.
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the format
-of the tautomer matching rules.
+.. include:: ref/tautomer_search.rst
+
+
 
 Similarity Search
 ~~~~~~~~~~~~~~~~~
 
-The general form of similarity search query is as follows:
+..
+    The general form of similarity search query is as follows:
+    
+    ::
+    
+        select * from $table where $column @ ($bottom, $top, '$query', '$metric')::bingo.sim
+    
+    -  ``$table`` is the name of the table containing molecules in the
+       column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query molfile or
+       SMILES.
+    -  ``$metric`` is a ``varchar`` string defining the metric to use:
+       ``Tanimoto``, ``Tversky``, or ``Euclid-sub``.
+    -  ``$bottom`` and ``$top`` are real numbers that specify bottom and top
+       limits of the required similarity, respectively.
+    
+    By default, the bottom limit is zero and the top limit is 1, which is
+    the maximum possible value of similarity. You can specify ``null`` in
+    place of ``$bottom`` or ``$top`` to disable the lower or upper bound. In
+    most cases, you may want to cancel the upper bound:
+    
+    ::
+    
+        select * from $table where $column @ (0.8, null, '$query', 'Tanimoto')::bingo.sim
 
-::
 
-    select * from $table where $column @ ($bottom, $top, '$query', '$metric')::bingo.sim
+.. include:: ref/similarity_search.rst
 
--  ``$table`` is the name of the table containing molecules in the
-   column ``$column``.
--  ``$query`` is a ``text`` string containing the query molfile or
-   SMILES.
--  ``$metric`` is a ``varchar`` string defining the metric to use:
-   ``Tanimoto``, ``Tversky``, or ``Euclid-sub``.
--  ``$bottom`` and ``$top`` are real numbers that specify bottom and top
-   limits of the required similarity, respectively.
-
-By default, the bottom limit is zero and the top limit is 1, which is
-the maximum possible value of similarity. You can specify ``null`` in
-place of ``$bottom`` or ``$top`` to disable the lower or upper bound. In
-most cases, you may want to cancel the upper bound:
-
-::
-
-    select * from $table where $column @ (0.8, null, '$query', 'Tanimoto')::bingo.sim
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#similarity-search>`__ to learn more
-about the metrics.
 
 Gross Formula Search
 ~~~~~~~~~~~~~~~~~~~~
 
-The general form of gross formula search query is as follows:
+..
+    The general form of gross formula search query is as follows:
+    
+    ::
+    
+        select * from $table where $column @ ('$query', '$parameters')::bingo.gross
+    
+    -  ``$table`` is the name of the table containing molecules in the
+       column ``$column``.
+    -  ``$query`` is a ``text`` string which looks like ”>= Cl6”, ”? C4 H4
+       O”, or ”= C6 H6”.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-::
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.gross
+.. include:: ref/gross_formula_search.rst
 
--  ``$table`` is the name of the table containing molecules in the
-   column ``$column``.
--  ``$query`` is a ``text`` string which looks like ”>= Cl6”, ”? C4 H4
-   O”, or ”= C6 H6”.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
 
-Please see the corresponding section of the `Bingo User Manual for
-Oracle <user-manual-oracle.html#gross-formula-search>`__ to see some
-examples.
 
 Molecular Weight Search
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,6 +229,7 @@ To use the bingo index the search query is:
    column ``$column``.
 -  ``$bottom`` and ``$top`` are numbers that specify the range to which
    the molecular weight of the resulting molecules must belong.
+
 
 Format Conversion
 ~~~~~~~~~~~~~~~~~
@@ -281,33 +281,43 @@ skipped.
 Canonical SMILES computation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use the function:
+..
+    You can use the function:
+    
+    ::
+    
+        select bingo.CanSMILES('$molecule')
+    
+    to generate canonical SMILES strings for molecules represented as
+    Molfiles or SMILES strings. 
 
-::
+.. include:: ref/canonical_SMILES.rst
 
-    select bingo.CanSMILES('$molecule')
-
-to generate canonical SMILES strings for molecules represented as
-Molfiles or SMILES strings. Please see the corresponding section of
-`Bingo User Manual for
-Oracle <user-manual-oracle.html#canonical-smiles>`__ to learn the
-benefits of Bingo canonical SMILES format.
 
 Molecule Fingerprints
 ~~~~~~~~~~~~~~~~~~~~~
 
-You can generate a molecule fingerprint via ``bingo.Fingerprint``
-function. The syntax is the same as for Bingo for Oracle, and it is
-described `in this
-section <user-manual-oracle.html#molecule-fingerprints>`__.
+..
+    You can generate a molecule fingerprint via ``bingo.Fingerprint``
+    function. The syntax is the same as for Bingo for Oracle.
+
+
+.. include:: ref/molecule_fingerprints.rst
+
 
 InChI and InChIKey
 ~~~~~~~~~~~~~~~~~~
 
-You can use ``bingo.InChI`` and ``bingo.InChIKey`` function to get InChI
-and InChIKey strings. The syntax is the same as for Bingo for Oracle,
-and it is described `in this
-section <user-manual-oracle.html#inchi-and-inchikey>`__.
+..
+    You can use ``bingo.InChI`` and ``bingo.InChIKey`` function to get InChI
+    and InChIKey strings. The syntax is the same as for Bingo for Oracle,
+    and it is described `in this
+    section <user-manual-oracle.html#inchi-and-inchikey>`__.
+
+
+.. include:: ref/InChI_and_InChIKey.rst
+
+
 
 Reactions
 ---------
@@ -335,90 +345,101 @@ The following command creates the index for bytea (binary) columns:
    in the binary column ``$bcolumn``.
 -  ``$index`` is the name of the new index.
 
+
 Reaction Substructure Search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The general form of reaction substructure search query is as follows:
+..
+    The general form of reaction substructure search query is as follows:
+    
+    ::
+    
+        select * from $table where $column @ ('$query', '$parameters')::bingo.rsub
+    
+    -  ``$table`` is the name of the table containing chemical reaction data
+       in the column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query Rxnfile or
+       reaction SMILES.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-::
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.rsub
+.. include:: ref/reaction_substructure_search.rst
 
--  ``$table`` is the name of the table containing chemical reaction data
-   in the column ``$column``.
--  ``$query`` is a ``text`` string containing the query Rxnfile or
-   reaction SMILES.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#substructure-search-1>`__ to learn the
-rules of Bingo reaction substructure matching and various query features
-available.
 
 Reaction SMARTS Search
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The syntax of SMARTS expression search is similar to the ordinary
-substructure search:
+..
+    The syntax of SMARTS expression search is similar to the ordinary
+    substructure search:
+    
+    ::
+    
+        select * from $table where $column @ ('$query', '$parameters')::bingo.rsmarts
+    
+    -  ``$table`` is the name of the table containing chemical reaction data
+       in the column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query Rxnfile or
+       reaction SMILES.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-::
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.rsmarts
+.. include:: ref/reaction_SMARTS_search.rst
 
--  ``$table`` is the name of the table containing chemical reaction data
-   in the column ``$column``.
--  ``$query`` is a ``text`` string containing the query Rxnfile or
-   reaction SMILES.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#smarts-search-1>`__ to learn the rules
-of SMARTS matching in Bingo.
 
 Reaction Exact Search
 ~~~~~~~~~~~~~~~~~~~~~
 
-The general form of exact search query is as follows:
+..
+    The syntax is as follows:
+    
+    ::
+    
+        select * from $table where $column @ ('$query', '$parameters')::bingo.rexact
+    
+    -  ``$table`` is the name of the table containing chemical reaction data
+       in the column ``$column``.
+    -  ``$query`` is a ``text`` string containing the query Rxnfile or
+       reaction SMILES.
+    -  ``$parameters`` is a ``varchar`` string that can be empty or contain
+       some options to pass to Bingo search engine.
 
-::
 
-    select * from $table where $column @ ('$query', '$parameters')::bingo.rexact
+.. include:: ref/reaction_exact_search.rst
 
--  ``$table`` is the name of the table containing chemical reaction data
-   in the column ``$column``.
--  ``$query`` is a ``text`` string containing the query Rxnfile or
-   reaction SMILES.
--  ``$parameters`` is a ``varchar`` string that can be empty or contain
-   some options to pass to Bingo search engine.
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#exact-search-1>`__ to learn the rules of
-Bingo exact matching and various flags available for ``$parameters``
-string.
 
 Automatic Atom-to-Atom mapping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can compute reaction AAM by calling the function:
+..
+    You can compute reaction AAM by calling the function:
+    
+    ::
+    
+        select bingo.AAM('$reaction', '$strategy');
+    
+    -  ``$reaction`` is a ``text`` string containing reaction SMILES or
+       Rxnfile.
+    -  ``$strategy`` is a ``varchar`` string defining the strategy to use:
+       ``CLEAR``, ``DISCARD``, ``ALTER`` or ``KEEP``.
+    -  The return value is an Rxnfile. In case the given reaction is
+       represented as a reaction SMILES, the automatic reaction layout is
+       performed.
+    
+    The corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#automatic-atom-to-atom-mapping>`__
+    describes the allowable values of the ``$strategy`` parameter and shows
+    some examples.
 
-::
 
-    select bingo.AAM('$reaction', '$strategy');
+.. include:: ref/automatic_atom-to-atom_mapping.rst
 
--  ``$reaction`` is a ``text`` string containing reaction SMILES or
-   Rxnfile.
--  ``$strategy`` is a ``varchar`` string defining the strategy to use:
-   ``CLEAR``, ``DISCARD``, ``ALTER`` or ``KEEP``.
--  The return value is an Rxnfile. In case the given reaction is
-   represented as a reaction SMILES, the automatic reaction layout is
-   performed.
 
-The corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#automatic-atom-to-atom-mapping>`__
-describes the allowable values of the ``$strategy`` parameter and shows
-some examples.
 
 Format Conversion
 ~~~~~~~~~~~~~~~~~
@@ -450,30 +471,39 @@ You can convert a reaction to a reaction CML using the function:
 Conversion to binary format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``Bingo.CompactReaction()`` operator can be used for converting
-Rxnfiles and reaction SMILES to internal binary format. The operator
-works equally well with ``text`` and ``bytea`` operands. The operator
-always returns the ``bytea`` result.
+.. 
+    The ``Bingo.CompactReaction()`` operator can be used for converting
+    Rxnfiles and reaction SMILES to internal binary format. The operator
+    works equally well with ``text`` and ``bytea`` operands. The operator
+    always returns the ``bytea`` result.
+    
+    ::
+    
+        SELECT Bingo.CompactReaction($rxnfile, $xyz) ;
+    
+        SELECT Bingo.CompactReaction($rsmiles, $xyz)L;
+    
+        SELECT Bingo.CompactReaction($column, $xyz) FROM $table;
+    
+    The ``$xyz`` parameter must be 0 or 1. If it is 1, the positions of
+    atoms are saved to the binary format. If it is zero, the positions are
+    skipped.
 
-::
 
-    SELECT Bingo.CompactReaction($rxnfile, $xyz) ;
+.. include:: ref/conversion_to_binary_format.rst
 
-    SELECT Bingo.CompactReaction($rsmiles, $xyz)L;
 
-    SELECT Bingo.CompactReaction($column, $xyz) FROM $table;
-
-The ``$xyz`` parameter must be 0 or 1. If it is 1, the positions of
-atoms are saved to the binary format. If it is zero, the positions are
-skipped.
 
 Reaction Fingerprints
 ~~~~~~~~~~~~~~~~~~~~~
 
-You can generate a reaction fingerprint via ``bingo.RFingeprint``
-function. The syntax is the same as for Bingo for Oracle, and it is
-described `in this
-section <user-manual-oracle.html#reaction-fingerprints>`__.
+..
+    You can generate a reaction fingerprint via ``bingo.RFingeprint``
+    function. 
+
+
+.. include:: ref/reaction_fingerprints.rst
+
 
 Importing and Exporting Data
 ----------------------------
@@ -726,3 +756,5 @@ All operation of Bingo is logged into the PostgreSQL native LOG. All
 error and warning messages (not necessarily visible in SQL session) are
 logged. Some performance measures of the SQL queries are written to the
 log as well.
+
+.. include:: ref/images.rst

@@ -246,34 +246,54 @@ To close database when you've done working with it call next function:
 Loading Index
 ~~~~~~~~~~~~~
 
-Follow the steps described in 'Molecules' section `Loading Index <user-manual-nosql.html#loading-index>`__
+.. include:: ref/indices.rst
+
+..
+    Follow the steps described in 'Molecules' section `Loading Index <user-manual-nosql.html#loading-index>`__
 
 Reaction Substructure Search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run substructure search through your database you can do next couple of steps.
+..
+     To run substructure search through your database you can do next couple of steps.
+    
+     Load your query reaction:
+     ::
+     
+         query = indigo.loadQueryMolecule('CC>>CN')
+     
 
-Load your query reaction:
-::
+.. include:: ref/reaction_substructure_search.rst
 
-    query = indigo.loadQueryMolecule('CC>>CN')
-
-And then follow the steps described in 'Molecules' section `Substructure Search <user-manual-nosql.html#substructure-search>`__
+..
+    And then follow the steps described in 'Molecules' section `Substructure Search <user-manual-nosql.html#substructure-search>`__
 
 Reaction Exact Search
 ~~~~~~~~~~~~~~~~~~~~~
 
-Follow the steps described in 'Molecules' section `Exact Search <user-manual-nosql.html#exact-search>`__
+
+.. include:: ref/reaction_exact_search.rst
+
+..
+    Follow the steps described in 'Molecules' section `Exact Search <user-manual-nosql.html#exact-search>`__
 
 Reaction Similarity Search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Follow the steps described in 'Molecules' section `Similarity Search <user-manual-nosql.html#similarity-search>`__
+
+.. include:: ref/similarity_search.rst
+
+..
+    Follow the steps described in 'Molecules' section `Similarity Search <user-manual-nosql.html#similarity-search>`__
 
 Reaction Gross Formula Search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Follow the steps described in 'Molecules' section `Gross Formula Search <user-manual-nosql.html#gross-formula-search>`__
+
+.. include:: ref/gross_formula_search.rst
+
+..
+    Follow the steps described in 'Molecules' section `Gross Formula Search <user-manual-nosql.html#gross-formula-search>`__
 
 
 Remaining results estimation
@@ -352,3 +372,7 @@ C Interface
     int bingoSearchMolFormula (int db, const char *query, const char *options);
 
     int bingoSearchSim (int db, int query_obj, float min, float max, const char *options);
+
+
+.. include:: ref/images.rst
+

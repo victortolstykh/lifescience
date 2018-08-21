@@ -11,9 +11,16 @@ Bingo supports Daylight SMILES with some ChemAxon extensions and MDL
 (Symyx) Molfile/Rxnfile formats both in the text and binary
 representation. All methods like ``Mass``, ``Gross``, ``Molfile``,
 ``SMILES`` and etc. have same functions for binary data with ``B``
-suffix: ``MassB``, ``GrossB`` and etc. Please look at the corresponding
-section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#data-representation>`__ for details.
+suffix: ``MassB``, ``GrossB`` and etc. 
+
+
+.. include:: ref/data_representation.rst
+
+
+..
+    Please look at the corresponding
+    section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#data-representation>`__ for details.
 
 Storage
 ~~~~~~~
@@ -73,90 +80,101 @@ The same syntax is for command to creates the index:
 Updating and Dropping Index
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can add, remove, or edit records in the table after the index is
-created. Adding records does not slow down the queries, i.e. the
-performance will be the same as if you had indexed the whole table at
-once. No re- indexing is required after adding the records.
+..
+    You can add, remove, or edit records in the table after the index is
+    created. Adding records does not slow down the queries, i.e. the
+    performance will be the same as if you had indexed the whole table at
+    once. No re- indexing is required after adding the records.
+    
+    After you insert, update or delete, you must either:
+    
+    -  close the SQL session, or
+    -  execute ``Bingo.FlushOperations()`` procedure.
+    
+    If the index was modified, any search procedure will be raising an
+    exception until ``FlushOperations`` is called.
+    
+    It is much faster to insert, delete or update records in a single SQL
+    statement rather by doing it one by one. If you have the indexed table,
+    and you have another portion on molecules that you to add, then you
+    should do it in a single SQL statement:
+    
+    ::
+    
+        insert into <table> (<columns>) select <columns> from <table_with_new_molecules>
+    
 
-After you insert, update or delete, you must either:
+.. include:: ref/updating_and_dropping_index.rst
 
--  close the SQL session, or
--  execute ``Bingo.FlushOperations()`` procedure.
-
-If the index was modified, any search procedure will be raising an
-exception until ``FlushOperations`` is called.
-
-It is much faster to insert, delete or update records in a single SQL
-statement rather by doing it one by one. If you have the indexed table,
-and you have another portion on molecules that you to add, then you
-should do it in a single SQL statement:
-
-::
-
-    insert into <table> (<columns>) select <columns> from <table_with_new_molecules>
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#updating-and-dropping-index>`__ for more
-details and recommendations. Please, note that for SQL Server flush
-procedure is called ``FlushOperations`` because it must be called after
-delete operations too.
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#updating-and-dropping-index>`__ for more
+    details and recommendations. Please, note that for SQL Server flush
+    procedure is called ``FlushOperations`` because it must be called after
+    delete operations too.
 
 Substructure Search
 ~~~~~~~~~~~~~~~~~~~
 
-The general form of substructure search query is as follows:
+..
+    The general form of substructure search query is as follows:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n') t
+           where $table.$id = t.id;
+    
+    ``$table`` is the name of the table containing the unique integer
+    identifier in column ``$id``. ``$query`` is a ``nvarchar`` string
+    containing the query molfile or SMILES. ``$parameters`` is a
+    ``nvarchar`` string that can be empty or contain some options to pass to
+    Bingo search engine.
+    
+    ``$n`` is the number defining how many hits you want, at most.
+    
+    **Note:** It is possible to use the ordinary ``SELECT TOP`` SQL
+    statement, but using the ``TOP`` parameter in Bingo parameters string
+    will be better for performance, as in this case the database engine will
+    not retrieve all the resulting records into memory before returning the
+    top ``$n`` ones.
+    
+    You can get all the hits by portions of an arbitrary size. First query
+    should have ``START`` option:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n; START') t
+           where $table.$id = t.id;
+    
+    After that you can get next portion of results by specifying last id,
+    returned by ``SearchSub`` function:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n; NEXT $last_id') t
+           where $table.$id = t.id;
+    
+    **Note:** These ``TOP``, ``START``, and ``NEXT`` options are common for
+    all Bingo search functions.
+    
+    In case you need all the hits, you can omit the ``TOP $n`` part of the
+    parameters string:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters') t
+           where $table.$id = t.id;
 
-::
 
-    select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n') t
-       where $table.$id = t.id;
+.. include:: ref/substructure_search.rst
 
-``$table`` is the name of the table containing the unique integer
-identifier in column ``$id``. ``$query`` is a ``nvarchar`` string
-containing the query molfile or SMILES. ``$parameters`` is a
-``nvarchar`` string that can be empty or contain some options to pass to
-Bingo search engine.
 
-``$n`` is the number defining how many hits you want, at most.
-
-**Note:** It is possible to use the ordinary ``SELECT TOP`` SQL
-statement, but using the ``TOP`` parameter in Bingo parameters string
-will be better for performance, as in this case the database engine will
-not retrieve all the resulting records into memory before returning the
-top ``$n`` ones.
-
-You can get all the hits by portions of an arbitrary size. First query
-should have ``START`` option:
-
-::
-
-    select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n; START') t
-       where $table.$id = t.id;
-
-After that you can get next portion of results by specifying last id,
-returned by ``SearchSub`` function:
-
-::
-
-    select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters; TOP $n; NEXT $last_id') t
-       where $table.$id = t.id;
-
-**Note:** These ``TOP``, ``START``, and ``NEXT`` options are common for
-all Bingo search functions.
-
-In case you need all the hits, you can omit the ``TOP $n`` part of the
-parameters string:
-
-::
-
-    select $table.* from $table, bingo.SearchSub('$table', $query, '$parameters') t
-       where $table.$id = t.id;
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#substructure-search>`__ to learn the
-rules of Bingo substructure matching (including Resonance search,
-Conformation search, Affine transformation search), and various query
-features available.
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#substructure-search>`__ to learn the
+    rules of Bingo substructure matching (including Resonance search,
+    Conformation search, Affine transformation search), and various query
+    features available.
 
 Highlighting the resulting molecules
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,93 +226,127 @@ Or
        from $table, bingo.SearchSMARTS('$table', $query, 'TOP $n') t
        where $table.$id = t.id;
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#smarts-search>`__ to learn the rules of
-SMARTS matching in Bingo.
+
+.. include:: ref/smarts_search.rst
+
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#smarts-search>`__ to learn the rules of
+    SMARTS matching in Bingo.
 
 Exact Search
 ~~~~~~~~~~~~
 
-The general form of exact search query is as follows:
+..
+    The general form of exact search query is as follows:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchExact('$table', $query, '$parameters; TOP $n') t
+           where $table.$id = t.id;
+    
+    The meaning of ``$table``, ``$id``, ``$query``, ``$parameters``, and
+    ``$n`` is the same as in ``SearchSub`` function.
+    
 
-::
+.. include:: ref/exact_search.rst
 
-    select $table.* from $table, bingo.SearchExact('$table', $query, '$parameters; TOP $n') t
-       where $table.$id = t.id;
-
-The meaning of ``$table``, ``$id``, ``$query``, ``$parameters``, and
-``$n`` is the same as in ``SearchSub`` function.
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#exact-search>`__ to learn the rules of
-Bingo exact matching and various flags available for ``$parameters``
-string.
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#exact-search>`__ to learn the rules of
+    Bingo exact matching and various flags available for ``$parameters``
+    string.
 
 Tautomer Search
 ~~~~~~~~~~~~~~~
 
 Tautomer search is implemented within Substructure and Exact search
 functions, and requires ``TAU`` flag to be specified in ``$parameters``
-string. Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the rules
-of Bingo exact and substructure tautomer matching.
+string. 
 
-Customizing the Rules
-^^^^^^^^^^^^^^^^^^^^^
+.. include:: ref/tautomer_search.rst
 
-Your database (to which you have installed Bingo) contains a table
-called ``bingo.TAUTOMER_RULES``. By default it contains 3 records with
-predefined rules. You can add, remove, or update the defined rules.
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the format
-of the tautomer matching rules.
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the rules
+    of Bingo exact and substructure tautomer matching.
+
+..
+    Customizing the Rules
+    ^^^^^^^^^^^^^^^^^^^^^
+    
+    Your database (to which you have installed Bingo) contains a table
+    called ``bingo.TAUTOMER_RULES``. By default it contains 3 records with
+    predefined rules. You can add, remove, or update the defined rules.
+    
+    .. include:: ref/customizing_the_rules.rst
+    
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#tautomer-search>`__ to learn the format
+    of the tautomer matching rules.
 
 Similarity Search
 ~~~~~~~~~~~~~~~~~
 
-The general form of similarity search query is as follows:
+..
+    The general form of similarity search query is as follows:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSim('$table', $query, '$metric; TOP $n', $bottom, $top) t
+           where $table.$id = t.id;
+    
+    The meaning of ``$table``, ``$id``, ``$query``, and ``$n`` is the same
+    as in ``SearchSub`` and ``SearchExact`` functions. ``$metric`` is a
+    ``nvarchar`` string defining the metric to use: ``Tanimoto``,
+    ``Tversky``, or ``Euclid-sub``. 
+    
 
-::
+.. include:: ref/similarity_search.rst
 
-    select $table.* from $table, bingo.SearchSim('$table', $query, '$metric; TOP $n', $bottom, $top) t
-       where $table.$id = t.id;
+..
+    Please see the corresponding section of
+    `Bingo User Manual for
+    Oracle <user-manual-oracle.html#similarity-search>`__ to learn more
+    about the metrics.
 
-The meaning of ``$table``, ``$id``, ``$query``, and ``$n`` is the same
-as in ``SearchSub`` and ``SearchExact`` functions. ``$metric`` is a
-``nvarchar`` string defining the metric to use: ``Tanimoto``,
-``Tversky``, or ``Euclid-sub``. Please see the corresponding section of
-`Bingo User Manual for
-Oracle <user-manual-oracle.html#similarity-search>`__ to learn more
-about the metrics.
-
-``$bottom`` and ``$top`` are real numbers that specify bottom and top
-limits of the required similarity, respectively. By default, the bottom
-limit is zero and the top limit is 1, which is the maximum possible
-value of similarity. You can specify ``null`` in place of ``$bottom`` or
-``$top`` to disable the lower or upper bound. In most cases, you may
-want to cancel the upper bound:
-
-::
-
-    select $table.* from $table, bingo.SearchSim('$table', $query, 'Tanimoto; TOP 100', 0.8, null) t
-       where $table.$id = t.id;
+..
+    ``$bottom`` and ``$top`` are real numbers that specify bottom and top
+    limits of the required similarity, respectively. By default, the bottom
+    limit is zero and the top limit is 1, which is the maximum possible
+    value of similarity. You can specify ``null`` in place of ``$bottom`` or
+    ``$top`` to disable the lower or upper bound. In most cases, you may
+    want to cancel the upper bound:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchSim('$table', $query, 'Tanimoto; TOP 100', 0.8, null) t
+           where $table.$id = t.id;
 
 Gross Formula Search
 ~~~~~~~~~~~~~~~~~~~~
 
-The general form of gross formula search query is as follows:
+..
+    The general form of gross formula search query is as follows:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchGross('$table', $query, '$TOP $n') t
+           where $table.$id = t.id;
+    
+    The meaning of ``$table``, ``$id``, and ``$n`` is the same as in all
+    similar functions mentioned above. ``$query`` is a ``nvarchar`` string
+    which looks like ”>= Cl6”, ”? C4 H4 O”, or ”= C6 H6”. 
+    
 
-::
+.. include:: ref/gross_formula_search.rst
 
-    select $table.* from $table, bingo.SearchGross('$table', $query, '$TOP $n') t
-       where $table.$id = t.id;
-
-The meaning of ``$table``, ``$id``, and ``$n`` is the same as in all
-similar functions mentioned above. ``$query`` is a ``nvarchar`` string
-which looks like ”>= Cl6”, ”? C4 H4 O”, or ”= C6 H6”. Please see the
-corresponding section of the `Bingo User Manual for
-Oracle <user-manual-oracle.html#gross-formula-search>`__ to see some
-examples.
+..
+    Please see the
+    corresponding section of the `Bingo User Manual for
+    Oracle <user-manual-oracle.html#gross-formula-search>`__ to see some
+    examples.
 
 Molecular Weight Search
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -354,27 +406,41 @@ function:
 Canonical SMILES computation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use the ``bingo.CanSMILES()`` function to generate canonical
-SMILES strings for molecules represented as Molfiles or SMILES strings.
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#canonical-smiles>`__ to learn the
-benefits of Bingo canonical SMILES format.
+..
+    You can use the ``bingo.CanSMILES()`` function to generate canonical
+    SMILES strings for molecules represented as Molfiles or SMILES strings.
+
+
+.. include:: ref/canonical_SMILES.rst
+
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#canonical-smiles>`__ to learn the
+    benefits of Bingo canonical SMILES format.
 
 Molecule Fingerprints
 ~~~~~~~~~~~~~~~~~~~~~
 
-You can generate a molecule fingerprint via ``bingo.Fingerprint``
-function. The syntax is the same as for Bingo for Oracle, and it is
-described `in this
-section <user-manual-oracle.html#molecule-fingerprints>`__.
+..
+    You can generate a molecule fingerprint via ``bingo.Fingerprint``
+    function. The syntax is the same as for Bingo for Oracle, and it is
+    described `in this
+    section <user-manual-oracle.html#molecule-fingerprints>`__.
+
+.. include:: ref/molecule_fingerprints.rst
+
 
 InChI and InChIKey
 ~~~~~~~~~~~~~~~~~~
 
-You can use ``bingo.InChI`` and ``bingo.InChIKey`` function to get InChI
-and InChIKey strings. The syntax is the same as for Bingo for Oracle,
-and it is described `in this
-section <user-manual-oracle.html#inchi-and-inchikey>`__.
+..
+    You can use ``bingo.InChI`` and ``bingo.InChIKey`` function to get InChI
+    and InChIKey strings. The syntax is the same as for Bingo for Oracle,
+    and it is described `in this
+    section <user-manual-oracle.html#inchi-and-inchikey>`__.
+
+.. include:: ref/InChI_and_InChIKey.rst
+
 
 Reactions
 ---------
@@ -389,8 +455,7 @@ The following command creates the index:
     exec bingo.CreateReactionIndex '$table', '$id', '$reaction';
 
 ``$table`` is the name of the table containing chemical reaction data in
-column ``$reaction`` and the unique integer identifier in column
-``$id``.
+column ``$reaction`` and the unique integer identifier in column ``$id``.
 
 Reaction Substructure Search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -441,10 +506,14 @@ empty string:
     select $table.* from $table, bingo.SearchRSub('$table', $query, '') t
        where $table.$id = t.id;
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#substructure-search-1>`__ to learn the
-rules of Bingo reaction substructure matching and various query features
-available.
+
+.. include:: ref/reaction_substructure_search.rst
+
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#substructure-search-1>`__ to learn the
+    rules of Bingo reaction substructure matching and various query features
+    available.
 
 SMARTS Search
 ~~~~~~~~~~~~~
@@ -473,27 +542,36 @@ Or
        from $table, bingo.SearchSMARTS('$table', $query, 'TOP $n') t
        where $table.$id = t.id;
 
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#smarts-search-1>`__ to learn the rules
-of SMARTS matching in Bingo.
+
+.. include:: ref/reaction_SMARTS_search.rst
+
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#smarts-search-1>`__ to learn the rules
+    of SMARTS matching in Bingo.
 
 Exact Search
 ~~~~~~~~~~~~
 
-The general form of exact search query is as follows:
+..
+    The general form of exact search query is as follows:
+    
+    ::
+    
+        select $table.* from $table, bingo.SearchRExact('$table', $query, '$parameters; TOP $n') t
+           where $table.$id = t.id;
+    
+    The meaning of ``$table``, ``$id``, ``$query``, ``$parameters``, and
+    ``$n`` is the same as in ``SearchSub`` function.
+    
 
-::
+.. include:: ref/reaction_exact_search.rst
 
-    select $table.* from $table, bingo.SearchRExact('$table', $query, '$parameters; TOP $n') t
-       where $table.$id = t.id;
-
-The meaning of ``$table``, ``$id``, ``$query``, ``$parameters``, and
-``$n`` is the same as in ``SearchSub`` function.
-
-Please see the corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#exact-search-1>`__ to learn the rules of
-Bingo exact matching and various flags available for ``$parameters``
-string.
+..
+    Please see the corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#exact-search-1>`__ to learn the rules of
+    Bingo exact matching and various flags available for ``$parameters``
+    string.
 
 Highlighting the resulting reactions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -521,21 +599,26 @@ reactions.
 Automatic Atom-to-Atom mapping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can compute reaction AAM by calling ``bingo.AAM`` function:
+..
+    You can compute reaction AAM by calling ``bingo.AAM`` function:
+    
+    ::
+    
+        select bingo.AAM($reaction, $strategy);
+    
+    As ``$reaction`` you can specify a ``nvarchar`` string containing
+    reaction SMILES or Rxnfile. The return value is an Rxnfile. In case the
+    given reaction is represented as a reaction SMILES, the automatic
+    reaction layout is performed.
+    
 
-::
+.. include:: ref/automatic_atom-to-atom_mapping.rst
 
-    select bingo.AAM($reaction, $strategy);
-
-As ``$reaction`` you can specify a ``nvarchar`` string containing
-reaction SMILES or Rxnfile. The return value is an Rxnfile. In case the
-given reaction is represented as a reaction SMILES, the automatic
-reaction layout is performed.
-
-The corresponding section of `Bingo User Manual for
-Oracle <user-manual-oracle.html#automatic-atom-to-atom-mapping>`__
-describes the allowable values of the ``$strategy`` parameter and shows
-some examples.
+..
+    The corresponding section of `Bingo User Manual for
+    Oracle <user-manual-oracle.html#automatic-atom-to-atom-mapping>`__
+    describes the allowable values of the ``$strategy`` parameter and shows
+    some examples.
 
 Format Conversion
 ~~~~~~~~~~~~~~~~~
@@ -579,10 +662,16 @@ function:
 Reaction Fingerprints
 ~~~~~~~~~~~~~~~~~~~~~
 
-You can generate a reaction fingerprint via ``bingo.RFingeprint``
-function. The syntax is the same as for Bingo for Oracle, and it is
-described `in this
-section <user-manual-oracle.html#reaction-fingerprints>`__.
+..
+    You can generate a reaction fingerprint via ``bingo.RFingeprint``
+    function. 
+
+.. include:: ref/reaction_fingerprints.rst
+
+..
+    The syntax is the same as for Bingo for Oracle, and it is
+    described `in this
+    section <user-manual-oracle.html#reaction-fingerprints>`__.
 
 Importing and Exporting Data
 ----------------------------
@@ -831,3 +920,8 @@ output path to the log file.
 All operation of Bingo is logged. All error and warning messages (not
 necessarily visible in SQL session) are logged. Some performance
 measures of the SQL queries are written to the log as well.
+
+
+.. include:: ref/images.rst
+
+
